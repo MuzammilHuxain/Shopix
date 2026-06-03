@@ -12,11 +12,14 @@ import Orders from "./pages/Orders";
 import NavBar from "./components/NavBar";
 
 import { Routes, Route } from "react-router-dom";
+import Footer from "./components/Footer";
+import SearchBar from "./components/SearchBar";
 
 const App = () => {
   return (
     <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
       <NavBar />
+      <SearchBar/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/collection" element={<Collection/>} />
@@ -28,6 +31,7 @@ const App = () => {
         <Route path="/place-order" element={<PlaceOrders />} />
         <Route path="/orders" element={<Orders />} />
       </Routes>
+      <Footer/>
     </div>
   );
 }
