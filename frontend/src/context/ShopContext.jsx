@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {products} from "../assets/assets";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 
 export const ShopContext = React.createContext();
@@ -10,11 +10,14 @@ export const ShopContext = React.createContext();
 
     const currency = "$";
     const delivery_fee = 10;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     const [search, setSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
     const [cartItems, setCartItems] = useState({});
     const navigate = useNavigate();
+    const [products, setProducts] = useState([]);
+    const [token, setToken] = useState('')
 
     const addToCart = async(itemId, size)=>{
 
@@ -41,6 +44,22 @@ export const ShopContext = React.createContext();
             cartData[itemId][size] = 1;
         }
         setCartItems(cartData);
+
+        if (token) {
+            try {
+                await axios.post(backendUrl+"/api/cart/add", { itemId, size }, {
+                    headers: {
+                        token: token
+                    }
+                });
+                
+            } catch (error) {
+                console.log(error);
+                toast.error("Error adding product to cart");
+                
+                
+            }
+        }
     };
 
     const getCartCount = ()=>{
@@ -65,6 +84,20 @@ export const ShopContext = React.createContext();
         let cartData = structuredClone(cartItems);
         cartData[itemId][size] = quantity;
         setCartItems(cartData);
+        if (token) {
+            try {
+                await axios.post(backendUrl+"/api/cart/update", { itemId, size, quantity }, {
+                    headers: {
+                        token: token
+                    }
+                });
+                
+            } catch (error) {
+                console.log(error);
+                toast.error("Error updating cart");
+            }
+        }
+
     }
 
     const getCartAmount = ()=>{
@@ -84,10 +117,54 @@ export const ShopContext = React.createContext();
         return totalAmount;
     }
     
+    const getProductsData = async()=>{
+        try {
+            const reponse = await axios.get(backendUrl+"/api/product/list");
+            
+            if (reponse.data.success) {
+                setProducts(reponse.data.products);
+            }else{
+                toast.error(reponse.data.message);
+            }
+            
+
+            
+        } catch (error) {
+            console.log(error);
+            toast.error("Error fetching product data");
+        }
+    }
+
+    const getUserCart = async(token)=>{
+            try {
+                const response = await axios.post(backendUrl+"/api/cart/get", {}, {
+                    headers: {
+                        token: token
+                    }
+                });
+                if (response.data.success) {
+                    setCartItems(response.data.cartData);
+                } 
+            } catch (error) {
+                console.log(error);
+                toast.error("Error fetching user cart data");
+            }
+    }
+
+    useEffect(()=>{
+        getProductsData();
+    },[])
+
+     useEffect(()=>{
+        if (!token && localStorage.getItem('token')) {
+            setToken(localStorage.getItem('token'));
+            getUserCart(localStorage.getItem('token'));
+        }
+    },[])
 
 
     const value ={
-            products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, addToCart, getCartCount, updateQuantity, getCartAmount, navigate
+            products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, addToCart, getCartCount, updateQuantity, getCartAmount, navigate, backendUrl, token, setToken
     }
     return (
         <ShopContext.Provider value={value}>
